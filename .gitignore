@@ -1,4 +1,6 @@
 *.csv
+*.pdf
+data/
 
 # Jupyter Notebook
 .ipynb_checkpoints

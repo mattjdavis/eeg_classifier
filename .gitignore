@@ -1,6 +1,8 @@
 *.csv
 *.pdf
 data/
+dask-worker-space/
+__pycache__/
 
 # Jupyter Notebook
 .ipynb_checkpoints

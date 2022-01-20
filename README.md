@@ -12,13 +12,13 @@ Dataset - CHB-MIT Scalp EEG Database
 + location: https://physionet.org/content/chbmit/1.0.0/
 
 
-## Result from artifically balanced dataset
+## Artifically balanced dataset
 This is the result of a Random Forest model trained on a balanced data set, where siezures and non seizure epochs equally represented. Various statstics (peak-to-peak,variance,mean,zero-crossings) from each channel served as features. Just a quick sanity test to get up and running.
 
-![Confusion matrix](img/balanced_hist.png)
+![Confusion matrix](img/balanced-hist.png)
 
-**Figure 2.** Histogram of raw data from each class. Qualitative differences suggest a model should be able to classify.
+**Figure 1.** Histogram of raw data from each class. Qualitative differences suggest a model should be able to classify.
 
-![Confusion matrix](img/balanced_cm.png)
+![Confusion matrix](img/balanced-cm.png)
 
 **Figure 2.** Confusion matrix. The model performs quite well on the balanced data.

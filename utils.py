@@ -117,7 +117,7 @@ def get_summaries(data_dir):
 
 
 def make_stats_df(X,stat_label,ch_names):
-    """ turn stats array in DataFrame with stats_lable column names
+    """ turn stats array in DataFrame with stats_label column names
     
     Args:
         X (ndarray): data matrix (segments x time)
@@ -144,8 +144,10 @@ def calc_segment_stats(raw,win_length=5,channels=None):
     # get ndarray from raw object
     if channels:
         data, times = raw.get_data(return_times=True,picks=channels)
+        ch_names=channels
     else:
         data, times = raw.get_data(return_times=True)
+        ch_names=raw.info['ch_names']
 
     # get info
     fs = raw.info['sfreq']
@@ -169,7 +171,7 @@ def calc_segment_stats(raw,win_length=5,channels=None):
     # make data frames
     stats_list = [m,v,s,k,sd,zerox,max_min]
     labels = ["mean","variance","skew","kurtosis","std","zerox","max-min"]
-    df_out = pd.concat([make_stats_df(x,y,raw.info['ch_names']) for x,y in zip(stats_list,labels)],axis=1)
+    df_out = pd.concat([make_stats_df(x,y,ch_names) for x,y in zip(stats_list,labels)],axis=1)
 
     return df_out
 
@@ -230,6 +232,9 @@ def process_raw_chb_data(data_dir, path, win_length=5, include_ictal=True, preic
 
     # TODO
     # preictal labels
+
+    df_stats['subject'] = path.parts[-2]
+    df_stats.astype('category')
     
 
     return df_stats

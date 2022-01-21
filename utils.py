@@ -11,7 +11,7 @@ import scipy.signal as signal
 
 
 
-def info_to_df(info_path):
+def info_to_df(info_path,return_channels = False):
     """Loads summary text file from single subject from CHB-MIT dataset
     
     Splits text files into chunks (text separated by blank lines in summary file). Then parses
@@ -44,8 +44,15 @@ def info_to_df(info_path):
             chunk=[]
     
     file_list = [x for x in chunked_list if 'File Name' in x[0]] # filter only files
+    channel_chunk = [x for x in chunked_list if 'Channels in EDF Files' in x[0]]
 
     ds = []
+
+    channels=[]
+    for line in channel_chunk[0][2:]:
+        string = line.split(': ')
+        channels.append(string[1])
+
 
     for file in file_list:
         d={}
@@ -69,13 +76,16 @@ def info_to_df(info_path):
 
         
         ds.append(d)
-
-    return pd.DataFrame(ds)
+    
+    if return_channels:
+        return pd.DataFrame(ds),channels
+    else:
+        return pd.DataFrame(ds)
 
 
 
 def get_summaries(data_dir):
-    """Loads all summary files into a dataframe.
+    """Loads all subjects summary file contents into a dataframe. Includes seizures info.
     
     Parameters
     ----------
@@ -119,29 +129,31 @@ def make_stats_df(X,stat_label,ch_names):
 
     return df
 
-def calc_segment_stats(raw,win_length=5):
+def calc_segment_stats(raw,win_length=5,channels=None):
     """Calculates various statistics for EEG signals.
 
     Args:
         raw (nme) TODO
         win_lenth (int): length of window for each segment (seconds)
+        Channels (list): list of strings, which channels to keep, if None keep all
 
     Returns:
         df_out (pd.DataFrame): segments x (channels * number of stats)
 
     """
     # get ndarray from raw object
-    data, times = raw.get_data(return_times=True)
+    if channels:
+        data, times = raw.get_data(return_times=True,picks=channels)
+    else:
+        data, times = raw.get_data(return_times=True)
 
     # get info
     fs = raw.info['sfreq']
     n_segments = int(data.shape[1]/(win_length*fs))
 
-    n_chan = raw.info["nchan"]
-
     cut = int(n_segments*win_length*fs)
     data=data[:,:cut] # remove last chunk of samples
-    D = np.reshape(data,(n_chan,n_segments,-1)) # channel x segment x time
+    D = np.reshape(data,(data.shape[0],n_segments,-1)) # channel x segment x time
 
 
     # calc stats for segments
@@ -161,7 +173,7 @@ def calc_segment_stats(raw,win_length=5):
 
     return df_out
 
-def process_raw_chb_data(data_dir, path, win_length=5, include_ictal=True, preictal_window=None):
+def process_raw_chb_data(data_dir, path, win_length=5, include_ictal=True, preictal_window=None,channels=[]):
     """Convert raw CHB-MIT data into processed pd.DataFrames with ictal labels
     
     Processing means extracting statistics of raw signals across time windows, defined by win_length
@@ -177,10 +189,10 @@ def process_raw_chb_data(data_dir, path, win_length=5, include_ictal=True, preic
         df_stats (pf.DataFrame):
         
     """
-
+    # t8-p8 is duplicated, - and . are dummy channel names
     raw = mne.io.read_raw_edf(path, exclude=['-', 'T8-P8', '.'], verbose=False, preload=True)
     
-    df_stats = calc_segment_stats(raw, win_length)
+    df_stats = calc_segment_stats(raw, win_length,channels=channels)
 
 
     fs = raw.info['sfreq']

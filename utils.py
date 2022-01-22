@@ -9,6 +9,8 @@ from pathlib import Path
 import scipy.stats as stats
 import scipy.signal as signal
 
+import yasa
+
 
 
 def info_to_df(info_path,return_channels = False):
@@ -168,10 +170,20 @@ def calc_segment_stats(raw,win_length=5,channels=None):
     zerox = (np.diff(np.sign(D)) != 0).sum(axis=2).T # count sign changes/zero crossings
     max_min = (np.max(D,axis=2) - np.min(D,axis=2)).T # peak-to-peak voltage
 
-    # make data frames
+    # make stats data frames
     stats_list = [m,v,s,k,sd,zerox,max_min]
     labels = ["mean","variance","skew","kurtosis","std","zerox","max-min"]
     df_out = pd.concat([make_stats_df(x,y,ch_names) for x,y in zip(stats_list,labels)],axis=1)
+
+    # bandpower
+    x,y = signal.welch(D,fs=fs,axis=2, average='median')
+    bands = ['delta', 'theta', 'alpha', 'sigma', 'beta', 'gamma']
+    bp_col_names = [ x + '_' +  str(y) for x in bands for y in ch_names]
+    bp = yasa.bandpower_from_psd_ndarray(y,x)
+    rbp = np.reshape(bp,(len(bands)*len(ch_names),-1)).T #(epoch x (bandpower_channel)) e.g. delta_ch0, delta_ch1....gamma_chx
+    df_bandpower = pd.DataFrame(rbp,columns=bp_col_names)
+
+    df_out = pd.concat([df_out, df_bandpower],axis=1)
 
     return df_out
 
